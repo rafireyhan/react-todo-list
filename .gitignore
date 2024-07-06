@@ -22,3 +22,6 @@
 /client/yarn-debug.log*
 /client/yarn-error.log*
 
+
+/service/node_modules
+/service/.env
