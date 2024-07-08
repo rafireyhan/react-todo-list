@@ -4,23 +4,34 @@ import { TodoForm } from './TodoForm'
 import { Todo } from './Todo'
 import {v4 as uuidv4} from 'uuid'
 import { EditTodoForm } from './EditTodoForm';
+
 uuidv4();
 
 export const TodoWrapper = () => {
     const [todos, setTodos] = useState([]);
+    const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
+
     useEffect(() => {
-        axios.get('http://localhost:8055/items/todolist')
-            .then((response) => {
-                setTodos(response.data.data);
-            })
-            .catch((error) => {
-                console.error("Error fetching todos:", error);
-            });
+        fetchTodo();
     }, []);
+
+    const fetchTodo = async () =>{
+        setLoading(true);
+        try {
+            const response = await axios.get('http://localhost:8055/items/todolist');
+            setTodos(response.data.data);
+        } catch (error) {
+            setError("Error fetching todos");
+            console.error("Error fetching todos:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     const addTodo = async (todo) => {
         try {
-            const response = await axios.post('http://localhost:8055/items/todolist', {
+            await axios.post('http://localhost:8055/items/todolist', {
                 status: "draft",
                 todo: todo,
                 completed: false,
@@ -30,21 +41,12 @@ export const TodoWrapper = () => {
                     'Content-Type': 'application/json',
                 }
             });
-            setTodos([...todos, response.data.data]);
-            console.log("Todo added successfully");
+            //setTodos([...todos, response.data.data]);
+            fetchTodo();
         } catch (error) {
+            setError("Error adding todo");
             console.error("Error adding todo:", error);
         }
-    }
-
-    const getTodo = async () =>{
-        await axios.get('http://localhost:8055/items/todolist')
-        .then((response) => {
-            setTodos(response.data.data);
-        })
-        .catch((error) => {
-            console.error("Error fetching todos:", error);
-        });
     }
 
     const toogleComplete = id => {
@@ -52,11 +54,14 @@ export const TodoWrapper = () => {
     }
 
     const deleteTodo = async (id) => {
-        await axios.delete(`http://localhost:8055/items/todolist/${id}`)
-        .then(() => {
-            getTodo();
-        });
-        setTodos(todos.filter(todo => todo.id !== id))
+        try {
+            await axios.delete(`http://localhost:8055/items/todolist/${id}`);
+            fetchTodo();
+            //setTodos(todos.filter(todo => todo.id !== id));
+        } catch (error) {
+            setError("Error deleting todo");
+            console.error("Error deleting todo:", error);
+        }
     }
 
     const editTodo = (id) => {
@@ -71,18 +76,20 @@ export const TodoWrapper = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 }
-            }).then(() => {
-                getTodo();
             });
-            setTodos(todos.map(todo => todo.id === id ? {...todo, task, isEditing: !todo.isEditing}: todo))
+            fetchTodo();
+            //setTodos(todos.map(todo => todo.id === id ? {...todo, task, isEditing: !todo.isEditing}: todo));
         } catch (error) {
+            setError("Error updating todo");
             console.log("Error updating todo: ", error)
         }
     }
 
     return (
         <div className='TodoWrapper'>
-            <h1>Rapi To Do List!</h1>
+            <h1>To Do List App</h1>
+            {loading && <p>Loading...</p>}
+            {error && <p className='error'>{error}</p>}
             <TodoForm addTodo={addTodo} />
             {todos.map((todo, index) =>(
                 todo.isEditing ? (
