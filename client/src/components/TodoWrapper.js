@@ -1,9 +1,9 @@
-import React, { useEffect, useState} from 'react'
-import { TodoForm } from './TodoForm'
-import { Todo } from './Todo'
-import {v4 as uuidv4} from 'uuid'
+import React, { useEffect, useState } from 'react';
+import { TodoForm } from './TodoForm';
+import { Todo } from './Todo';
+import { v4 as uuidv4 } from 'uuid';
 import { EditTodoForm } from './EditTodoForm';
-import { fetchTodo, addTodo, deleteTodo, editTask } from '../utils/axios-adapter';
+import { requestAdapter } from '../utils/axios-adapter';
 
 uuidv4();
 
@@ -13,10 +13,10 @@ export const TodoWrapper = () => {
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        const loadTodos = async () =>{
+        const loadTodos = async () => {
             setIsLoading(true);
             try {
-                const data = await fetchTodo();
+                const data = await requestAdapter.fetchTodo();
                 setTodos(data);
             } catch (error) {
                 setErrorMessage(error.message);
@@ -29,8 +29,8 @@ export const TodoWrapper = () => {
 
     const handleAddTodo = async (todo) => {
         try {
-            await addTodo(todo);
-            const data = await fetchTodo();
+            await requestAdapter.addTodo(todo);
+            const data = await requestAdapter.fetchTodo();
             setTodos(data);
         } catch (error) {
             setErrorMessage(error.message);
@@ -39,30 +39,30 @@ export const TodoWrapper = () => {
 
     const handleDeleteTodo = async (id) => {
         try {
-            await deleteTodo(id);
-            const data = await fetchTodo();
+            await requestAdapter.deleteTodo(id);
+            const data = await requestAdapter.fetchTodo();
             setTodos(data);
         } catch (error) {
             setErrorMessage(error.message);
         }
     }
 
-    const handleEditTask = async (task, id) =>{
+    const handleEditTask = async (task, id) => {
         try {
-            await editTask(task, id);
-            const data = await fetchTodo();
+            await requestAdapter.editTask(task, id);
+            const data = await requestAdapter.fetchTodo();
             setTodos(data);
         } catch (error) {
             setErrorMessage(error.message);
         }
     }
 
-    const toogleComplete = id => {
-        setTodos(todos.map(todo => todo.id === id ? {...todo, completed: !todo.completed} : todo))
+    const toggleComplete = (id) => {
+        setTodos(todos.map(todo => todo.id === id ? { ...todo, completed: !todo.completed } : todo));
     }
 
     const editTodo = (id) => {
-        setTodos(todos.map(todo => todo.id === id ? {...todo, isEditing: !todo.isEditing}: todo))
+        setTodos(todos.map(todo => todo.id === id ? { ...todo, isEditing: !todo.isEditing } : todo));
     }
 
     return (
@@ -71,15 +71,15 @@ export const TodoWrapper = () => {
             {isLoading && <p>Loading...</p>}
             {errorMessage && <p className='error'>{errorMessage}</p>}
             <TodoForm addTodo={handleAddTodo} />
-            {todos.map((todo, index) =>(
+            {todos.map((todo, index) => (
                 todo.isEditing ? (
-                    <EditTodoForm editTodo={handleEditTask} task={todo} key={index}/>
+                    <EditTodoForm editTodo={handleEditTask} task={todo} key={index} />
                 ) : (
-                    <Todo 
-                        task={todo} 
-                        key={index} 
-                        toogleComplete={toogleComplete}
-                        deleteTodo={handleDeleteTodo} 
+                    <Todo
+                        task={todo}
+                        key={index}
+                        toggleComplete={toggleComplete}
+                        deleteTodo={handleDeleteTodo}
                         editTodo={editTodo}
                     />
                 )

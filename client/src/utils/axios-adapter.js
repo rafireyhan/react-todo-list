@@ -1,53 +1,63 @@
 import axios from 'axios';
 
-export const fetchTodo = async () =>{
-    try {
-        const response = await axios.get('http://localhost:8055/items/todolist');
-        return response.data.data;
-    } catch (error) {
-        console.error("Error fetching todos:", error);
-        throw new Error("Error fetching todos");
-    }
-}
+class RequestAdapter {
+    constructor(props = {}) {
+        const { baseURL = 'http://localhost:8055/items/todolist', ...rest } = props;
+        this.adapter = axios.create({
+            baseURL,
+            ...rest,
+        });
 
-export const addTodo = async (todo) => {
-    try {
-        await axios.post('http://localhost:8055/items/todolist',{
+        this.adapter.interceptors.request.use(this.interceptRequest);
+        this.adapter.interceptors.response.use(
+            this.interceptResponse,
+            this.handleError
+        );
+    }
+
+    async interceptRequest(config) {
+        return config;
+    }
+
+    async interceptResponse(response) {
+        return response.data.data;
+    }
+
+    handleError(error) {
+        console.error("API Error:", error);
+        throw error;
+    }
+
+    fetchTodo() {
+        return this.adapter.get("/");
+    }
+
+    addTodo(todo){
+        return this.adapter.post("/",{
             status: "draft",
-            todo: todo,
+            todo,
             completed: false,
             isEditing: false
-        },{
+        }, {
             headers: {
                 'Content-Type': 'application/json',
             }
         });
-    } catch (error) {
-        console.error("Error adding todo:", error);
-        throw new Error ("Error adding todo");
     }
-}
 
-export const deleteTodo = async (id) =>{
-    try {
-        await axios.delete(`http://localhost:8055/items/todolist/${id}`);
-    } catch (error) {
-        console.error("Error deleting todo:", error);
-        throw new Error("Error deleting todo");
+    deleteTodo(id) {
+        return this.adapter.delete(`/${id}`);
     }
-}
 
-export const editTask = async (task, id) => {
-    try {
-        await axios.patch(`http://localhost:8055/items/todolist/${id}`,{
+    editTask(task, id) {
+        return this.adapter.patch(`/${id}`, {
             todo: task
-        },{
+        }, {
             headers: {
                 'Content-Type': 'application/json',
             }
         });
-    } catch (error) {
-        console.log("Error updating todo:", error);
-        throw new Error("Error updating todo");
     }
 }
+
+export const requestAdapter = new RequestAdapter();
