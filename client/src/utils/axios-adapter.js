@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class RequestAdapter {
     constructor(props = {}) {
-        const { baseURL = 'http://localhost:8055/items/todolist', ...rest } = props;
+        const { baseURL = process.env.REACT_APP_API_URL, ...rest } = props;
         this.adapter = axios.create({
             baseURL,
             ...rest,
@@ -28,35 +28,20 @@ class RequestAdapter {
         throw error;
     }
 
-    fetchTodo() {
-        return this.adapter.get("/");
+    get(url, config = {}) {
+        return this.adapter.get(url, config);
     }
 
-    addTodo(todo){
-        return this.adapter.post("/",{
-            status: "draft",
-            todo,
-            completed: false,
-            isEditing: false
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
+    post(url, data, config = {}) {
+        return this.adapter.post(url, data, config);
     }
 
-    deleteTodo(id) {
-        return this.adapter.delete(`/${id}`);
+    delete(url, config = {}) {
+        return this.adapter.delete(url, config);
     }
 
-    editTask(task, id) {
-        return this.adapter.patch(`/${id}`, {
-            todo: task
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        });
+    patch(url, data, config = {}) {
+        return this.adapter.patch(url, data, config);
     }
 }
 

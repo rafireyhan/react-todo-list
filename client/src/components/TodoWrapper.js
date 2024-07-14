@@ -3,7 +3,7 @@ import { TodoForm } from './TodoForm';
 import { Todo } from './Todo';
 import { v4 as uuidv4 } from 'uuid';
 import { EditTodoForm } from './EditTodoForm';
-import { requestAdapter } from '../utils/axios-adapter';
+import { fetchTodo, addTodo, editTask, deleteTodo} from '../services/todo.services';
 
 uuidv4();
 
@@ -16,7 +16,7 @@ export const TodoWrapper = () => {
         const loadTodos = async () => {
             setIsLoading(true);
             try {
-                const data = await requestAdapter.fetchTodo();
+                const data = await fetchTodo();
                 setTodos(data);
             } catch (error) {
                 setErrorMessage(error.message);
@@ -29,8 +29,8 @@ export const TodoWrapper = () => {
 
     const handleAddTodo = async (todo) => {
         try {
-            await requestAdapter.addTodo(todo);
-            const data = await requestAdapter.fetchTodo();
+            await addTodo(todo);
+            const data = await fetchTodo();
             setTodos(data);
         } catch (error) {
             setErrorMessage(error.message);
@@ -39,8 +39,8 @@ export const TodoWrapper = () => {
 
     const handleDeleteTodo = async (id) => {
         try {
-            await requestAdapter.deleteTodo(id);
-            const data = await requestAdapter.fetchTodo();
+            await deleteTodo(id);
+            const data = await fetchTodo();
             setTodos(data);
         } catch (error) {
             setErrorMessage(error.message);
@@ -49,8 +49,8 @@ export const TodoWrapper = () => {
 
     const handleEditTask = async (task, id) => {
         try {
-            await requestAdapter.editTask(task, id);
-            const data = await requestAdapter.fetchTodo();
+            await editTask(task, id);
+            const data = await fetchTodo();
             setTodos(data);
         } catch (error) {
             setErrorMessage(error.message);
