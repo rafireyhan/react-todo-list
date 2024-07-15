@@ -77,13 +77,6 @@ export const TodoWrapper = () => {
     } catch (error) {}
   };
 
-  // const toggleComplete = (id) => {
-  //   setLocalTodos(
-  //     localTodos.map((todo) =>
-  //       todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-  //     ),
-  //   );
-  // };
   const toggleComplete = async (id) => {
     const todo = localTodos.find(todo => todo.id === id);
     if (todo){
