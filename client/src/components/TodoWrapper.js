@@ -1,103 +1,129 @@
-import axios from 'axios';
-import React, { useEffect, useState} from 'react'
-import { TodoForm } from './TodoForm'
-import { Todo } from './Todo'
-import {v4 as uuidv4} from 'uuid'
-import { EditTodoForm } from './EditTodoForm';
-uuidv4();
+import React, { useEffect, useState } from "react";
+import { TodoForm } from "./TodoForm";
+import { Todo } from "./Todo";
+import { EditTodoForm } from "./EditTodoForm";
+import useGetListTodos from "./hooks/useGetListTodos";
+import { useMutateTodos, useEditTodos, useDeleteTodos} from "./hooks/useMutateSetTodos";
 
 export const TodoWrapper = () => {
-    const [todos, setTodos] = useState([]);
-    useEffect(() => {
-        axios.get('http://localhost:8055/items/todolist')
-            .then((response) => {
-                setTodos(response.data.data);
-            })
-            .catch((error) => {
-                console.error("Error fetching todos:", error);
-            });
-    }, []);
+  const [localTodos, setLocalTodos] = useState([]);
+  const [message, setMessage] = useState("");
 
-    const addTodo = async (todo) => {
-        try {
-            const response = await axios.post('http://localhost:8055/items/todolist', {
-                status: "draft",
-                todo: todo,
-                completed: false,
-                isEditing: false
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            setTodos([...todos, response.data.data]);
-            console.log("Todo added successfully");
-        } catch (error) {
-            console.error("Error adding todo:", error);
-        }
+  const clearMessage = () => {
+    setTimeout(() => {
+      setMessage("");
+    }, 3000);
+  }
+
+  const { data: todos, refetch, isLoading, errorMessage } = useGetListTodos();
+  
+  const { mutate, isLoading: isMutatePending } = useMutateTodos({
+    onSuccess: () => {
+      setMessage("Todo added succesfully!");
+      clearMessage();
+      refetch();
+    },
+    onFailed: (error) => {
+      setMessage(`Failed to add todo: ${error.message}`);
+      clearMessage();
+    },
+  });
+
+  const { edit, isLoading: isEditPending } = useEditTodos({
+    onSuccess: () => {
+      setMessage("Todo edited sucessfully!");
+      clearMessage();
+      refetch();
+    },
+    onFailed: (error) => {
+      setMessage(`Failed to edit todo: ${error.message}`);
+      clearMessage();
+    },
+  });
+
+  const { deleteTask, isLoading: isDeletePending } = useDeleteTodos({
+    onSuccess: () =>{
+      setMessage("Todo deleted successfully");
+      clearMessage();
+      refetch();
+    },
+    onFailed: (error) =>{
+      setMessage(`Failed to delete todo: ${error.message}`);
+      clearMessage();
+    },
+  });
+
+  useEffect(() =>{
+    if (todos){
+      setLocalTodos(todos);
     }
+  }, [todos]);
 
-    const getTodo = async () =>{
-        await axios.get('http://localhost:8055/items/todolist')
-        .then((response) => {
-            setTodos(response.data.data);
-        })
-        .catch((error) => {
-            console.error("Error fetching todos:", error);
-        });
+  const handleAddTodo = async (todo) => {
+    await mutate(todo);
+  };
+
+  const handleDeleteTodo = async (id) => {
+    try {
+      await deleteTask(id);
+      refetch();
+    } catch (error) {}
+  };
+
+  const handleEditTask = async (task, id) => {
+    try {
+      await edit(task, id);
+      refetch();
+    } catch (error) {}
+  };
+
+  const toggleComplete = async (id) => {
+    const todo = localTodos.find(todo => todo.id === id);
+    if (todo){
+      const updatedStatus = todo.status === "draft" ? "published" : "draft";
+      const updatedCompleted = updatedStatus === "published" ? "completed" : "";
+      const updatedTodo = {
+        ...todo,
+        status: updatedStatus,
+        completed: updatedCompleted
+      };
+
+      try {
+        await handleEditTask(updatedTodo, id);
+      } catch (error) {
+        console.error("Failed to toggle todo status: ", error);
+      }
     }
+  };
 
-    const toogleComplete = id => {
-        setTodos(todos.map(todo => todo.id === id ? {...todo, completed: !todo.completed} : todo))
-    }
+  const editTodo = (id) => {
+    setLocalTodos(localTodos.map(todo => todo.id === id ? {...todo, isEditing: !todo.isEditing}: todo))
+  }
 
-    const deleteTodo = async (id) => {
-        await axios.delete(`http://localhost:8055/items/todolist/${id}`)
-        .then(() => {
-            getTodo();
-        });
-        setTodos(todos.filter(todo => todo.id !== id))
-    }
+  const isAnyPending = isMutatePending || isEditPending || isDeletePending;
 
-    const editTodo = (id) => {
-        setTodos(todos.map(todo => todo.id === id ? {...todo, isEditing: !todo.isEditing}: todo))
-    }
+  return (
+    <div className="TodoWrapper">
+      <h1>To Do List App</h1>
+      {isLoading && <p>Loading...</p>}
+      {errorMessage && <p className="error">{errorMessage}</p>}
+      <TodoForm addTodo={handleAddTodo} isPending={isAnyPending}/>
+      {localTodos.map((todo, index) =>
+        todo.isEditing ? (
+          <EditTodoForm editTodo={handleEditTask} task={todo} key={index} />
+        ) : (
+          <Todo
+            task={todo}
+            key={index}
+            toggleComplete={toggleComplete}
+            deleteTodo={handleDeleteTodo}
+            editTodo={editTodo}
+          />
+        ),
+      )}
+      
+      {message && <h4>{message}</h4>}
+    </div>
+  );
+};
 
-    const editTask = async (task, id)=>{
-        try {
-            await axios.patch(`http://localhost:8055/items/todolist/${id}`, {
-                todo: task
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            }).then(() => {
-                getTodo();
-            });
-            setTodos(todos.map(todo => todo.id === id ? {...todo, task, isEditing: !todo.isEditing}: todo))
-        } catch (error) {
-            console.log("Error updating todo: ", error)
-        }
-    }
-
-    return (
-        <div className='TodoWrapper'>
-            <h1>Rapi To Do List!</h1>
-            <TodoForm addTodo={addTodo} />
-            {todos.map((todo, index) =>(
-                todo.isEditing ? (
-                    <EditTodoForm editTodo={editTask} task={todo} key={index}/>
-                ): (
-                <Todo 
-                    task={todo} 
-                    key={index} 
-                    toogleComplete={toogleComplete}
-                    deleteTodo={deleteTodo} 
-                    editTodo={editTodo}
-                />
-                )
-                
-            ))}
-        </div>
-    )
-}

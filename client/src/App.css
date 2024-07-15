@@ -24,6 +24,14 @@ h1 {
   font-size: 1.75rem;
 }
 
+h4 {
+  color: #fff;
+}
+
+p {
+  color: #fff;
+}
+
 .TodoWrapper {
   background: #1A1A40;
   margin-top: 5rem;
