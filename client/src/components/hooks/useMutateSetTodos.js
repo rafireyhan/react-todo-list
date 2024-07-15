@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { addTodo } from "../../services/todo.services";
+import { addTodo, editTask, deleteTodo } from "../../services/todo.services";
 
-const useMutateTodos = ({ onSuccess, onFailed }) => {
+export const useMutateTodos = ({ onSuccess, onFailed }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -9,7 +9,6 @@ const useMutateTodos = ({ onSuccess, onFailed }) => {
     setIsLoading(true);
     try {
       await addTodo(todo);
-
       onSuccess(todo);
     } catch (error) {
       setErrorMessage(error.message);
@@ -21,4 +20,43 @@ const useMutateTodos = ({ onSuccess, onFailed }) => {
 
   return { mutate, isLoading, errorMessage };
 };
-export default useMutateTodos;
+
+export const useEditTodos = ({onSuccess, onFailed}) =>{
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const edit = async (task, id) => {
+    setIsLoading(true);
+    try {
+      await editTask(task, id);
+      onSuccess(task);
+    } catch (error) {
+      setErrorMessage(error.message);
+      onFailed(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { edit, isLoading, errorMessage};
+}
+
+export const useDeleteTodos = ({onSuccess, onFailed}) =>{
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const deleteTask = async (id) => {
+    setIsLoading(true);
+    try{
+      await deleteTodo(id);
+      onSuccess(id);
+    } catch (error) {
+      setErrorMessage(error.message);
+      onFailed(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { deleteTask, isLoading, errorMessage};
+}

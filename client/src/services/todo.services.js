@@ -21,9 +21,22 @@ export const deleteTodo = (id) => {
     return requestAdapter.delete(`/${id}`);
 };
 
+// export const editTask = (task, id) =>{
+//     return requestAdapter.patch(`/${id}`,{
+//         todo: task
+//     }, {
+//         headers: {
+//             'Content-Type': 'application/json',
+//         }
+//     });
+// };
+
 export const editTask = (task, id) =>{
     return requestAdapter.patch(`/${id}`,{
-        todo: task
+        todo: task.todo,
+        status: task.status,
+        completed: task.completed,
+        isEditing: task.isEditing
     }, {
         headers: {
             'Content-Type': 'application/json',

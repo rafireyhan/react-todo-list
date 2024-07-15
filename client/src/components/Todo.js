@@ -8,7 +8,7 @@ export const Todo = ({task, toggleComplete, deleteTodo, editTodo}) => {
         <div className='Todo'>
             <p 
             onClick={() => toggleComplete(task.id)}
-            className={`${task.completed ? 'completed': ""}`}>
+            className={`${task.status === "published" ? 'completed': ""}`}>
                 {task.todo}
             </p>
             <div>

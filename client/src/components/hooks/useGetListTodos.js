@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { fetchTodo } from "../../services/todo.services";
 
 const useGetListTodos = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const fetchTodo = async () => {
+  const getTodo = async () => {
     setIsLoading(true);
     try {
       const data = await fetchTodo();
@@ -18,14 +19,14 @@ const useGetListTodos = () => {
   };
 
   useEffect(() => {
-    fetchTodo();
-  });
+    getTodo();
+  }, []);
 
   return {
     data,
     isLoading,
     errorMessage,
-    refetch: fetchTodo,
+    refetch: getTodo,
   };
 };
 

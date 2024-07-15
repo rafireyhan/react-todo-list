@@ -1,29 +1,63 @@
 import React, { useEffect, useState } from "react";
 import { TodoForm } from "./TodoForm";
 import { Todo } from "./Todo";
-import { v4 as uuidv4 } from "uuid";
 import { EditTodoForm } from "./EditTodoForm";
-import {
-  fetchTodo,
-  addTodo,
-  editTask,
-  deleteTodo,
-} from "../services/todo.services";
 import useGetListTodos from "./hooks/useGetListTodos";
-import useMutateTodos from "./hooks/useMutateSetTodos";
-
-uuidv4();
+import { useMutateTodos, useEditTodos, useDeleteTodos} from "./hooks/useMutateSetTodos";
 
 export const TodoWrapper = () => {
+  const [localTodos, setLocalTodos] = useState([]);
+  const [message, setMessage] = useState("");
+
+  const clearMessage = () => {
+    setTimeout(() => {
+      setMessage("");
+    }, 3000);
+  }
+
   const { data: todos, refetch, isLoading, errorMessage } = useGetListTodos();
-  const { mutate, isLoading: isPending } = useMutateTodos({
+  
+  const { mutate, isLoading: isMutatePending } = useMutateTodos({
     onSuccess: () => {
+      setMessage("Todo added succesfully!");
+      clearMessage();
       refetch();
     },
     onFailed: (error) => {
-      alert.error(error.message);
+      setMessage(`Failed to add todo: ${error.message}`);
+      clearMessage();
     },
   });
+
+  const { edit, isLoading: isEditPending } = useEditTodos({
+    onSuccess: () => {
+      setMessage("Todo edited sucessfully!");
+      clearMessage();
+      refetch();
+    },
+    onFailed: (error) => {
+      setMessage(`Failed to edit todo: ${error.message}`);
+      clearMessage();
+    },
+  });
+
+  const { deleteTask, isLoading: isDeletePending } = useDeleteTodos({
+    onSuccess: () =>{
+      setMessage("Todo deleted successfully");
+      clearMessage();
+      refetch();
+    },
+    onFailed: (error) =>{
+      setMessage(`Failed to delete todo: ${error.message}`);
+      clearMessage();
+    },
+  });
+
+  useEffect(() =>{
+    if (todos){
+      setLocalTodos(todos);
+    }
+  }, [todos]);
 
   const handleAddTodo = async (todo) => {
     await mutate(todo);
@@ -31,41 +65,57 @@ export const TodoWrapper = () => {
 
   const handleDeleteTodo = async (id) => {
     try {
-      await deleteTodo(id);
+      await deleteTask(id);
       refetch();
     } catch (error) {}
   };
 
   const handleEditTask = async (task, id) => {
     try {
-      await editTask(task, id);
+      await edit(task, id);
       refetch();
     } catch (error) {}
   };
 
-  const toggleComplete = (id) => {
-    // setTodos(
-    //   todos.map((todo) =>
-    //     todo.id === id ? { ...todo, completed: !todo.completed } : todo,
-    //   ),
-    // );
+  // const toggleComplete = (id) => {
+  //   setLocalTodos(
+  //     localTodos.map((todo) =>
+  //       todo.id === id ? { ...todo, completed: !todo.completed } : todo,
+  //     ),
+  //   );
+  // };
+  const toggleComplete = async (id) => {
+    const todo = localTodos.find(todo => todo.id === id);
+    if (todo){
+      const updatedStatus = todo.status === "draft" ? "published" : "draft";
+      const updatedCompleted = updatedStatus === "published" ? "completed" : "";
+      const updatedTodo = {
+        ...todo,
+        status: updatedStatus,
+        completed: updatedCompleted
+      };
+
+      try {
+        await handleEditTask(updatedTodo, id);
+      } catch (error) {
+        console.error("Failed to toggle todo status: ", error);
+      }
+    }
   };
 
   const editTodo = (id) => {
-    // setTodos(
-    //   todos.map((todo) =>
-    //     todo.id === id ? { ...todo, isEditing: !todo.isEditing } : todo,
-    //   ),
-    // );
-  };
+    setLocalTodos(localTodos.map(todo => todo.id === id ? {...todo, isEditing: !todo.isEditing}: todo))
+  }
+
+  const isAnyPending = isMutatePending || isEditPending || isDeletePending;
 
   return (
     <div className="TodoWrapper">
       <h1>To Do List App</h1>
       {isLoading && <p>Loading...</p>}
       {errorMessage && <p className="error">{errorMessage}</p>}
-      <TodoForm addTodo={handleAddTodo} />
-      {todos.map((todo, index) =>
+      <TodoForm addTodo={handleAddTodo} isPending={isAnyPending}/>
+      {localTodos.map((todo, index) =>
         todo.isEditing ? (
           <EditTodoForm editTodo={handleEditTask} task={todo} key={index} />
         ) : (
@@ -78,6 +128,8 @@ export const TodoWrapper = () => {
           />
         ),
       )}
+      
+      {message && <h4>{message}</h4>}
     </div>
   );
 };

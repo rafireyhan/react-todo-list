@@ -1,6 +1,6 @@
 import React, {useState} from 'react'
 
-export const TodoForm = ({ addTodo }) => {
+export const TodoForm = ({ addTodo, isPending }) => {
     const [value, setValue] = useState("")
 
     const handleSubmit = e => {
@@ -12,7 +12,7 @@ export const TodoForm = ({ addTodo }) => {
     return (
         <form className='TodoForm' onSubmit={handleSubmit}>
             <input type='text' className='todo-input' value={value} placeholder='What is the task today?' onChange={(e) => setValue(e.target.value)} />
-            <button type='submit' className='todo-btn'>Add Task</button>
+            <button type='submit' className='todo-btn' disabled={isPending}>{isPending ? "Loading..." : "Add Task"}</button>
         </form>
     )
 }
